@@ -674,7 +674,7 @@ class Map extends BaseObject {
     this.controls.clear();
     this.interactions.clear();
     this.overlays_.clear();
-    this.resizeObserver_.disconnect();
+    this.resizeObserver_?.disconnect();
     this.setTarget(null);
     super.disposeInternal();
   }
@@ -1289,10 +1289,12 @@ class Map extends BaseObject {
     }
 
     if (this.targetElement_) {
-      this.resizeObserver_.unobserve(this.targetElement_);
-      const rootNode = this.targetElement_.getRootNode();
-      if (rootNode instanceof ShadowRoot) {
-        this.resizeObserver_.unobserve(rootNode.host);
+      if (!WORKER_OFFSCREEN_CANVAS) {
+        this.resizeObserver_.unobserve(this.targetElement_);
+        const rootNode = this.targetElement_.getRootNode();
+        if (rootNode instanceof ShadowRoot) {
+          this.resizeObserver_.unobserve(rootNode.host);
+        }
       }
       this.setSize(undefined);
     }
@@ -1380,7 +1382,7 @@ class Map extends BaseObject {
         if (rootNode instanceof ShadowRoot) {
           this.resizeObserver_.observe(rootNode.host);
         }
-        this.resizeObserver_.observe(targetElement);
+        this.resizeObserver_?.observe(targetElement);
       }
 
       this.updateSize();

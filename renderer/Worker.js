@@ -1,8 +1,7 @@
 /**
- * @module ol/renderer/Composite
+ * @module ol/renderer/Worker
  */
 import ObjectEventType from '../ObjectEventType.js';
-// import {CLASS_UNSELECTABLE} from '../css.js';
 import {replaceChildren} from '../dom.js';
 import {listen, unlistenByKey} from '../events.js';
 import BaseVectorLayer from '../layer/BaseVector.js';
@@ -96,7 +95,7 @@ class WorkerMapRenderer extends MapRenderer {
    */
   disposeInternal() {
     unlistenByKey(this.fontChangeListenerKey_);
-    this.element_.remove();
+    this.element_.remove?.();
     super.disposeInternal();
   }
 
