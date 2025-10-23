@@ -343,7 +343,9 @@ export function defaultTileLoadFunction(imageTile, src) {
       })
       .catch(() => {
         const canvas = imageTile.getImage();
-        canvas.dispatchEvent(new Event('error'));
+        //canvas.dispatchEvent(new Event('error'));
+        // TEMPORARY
+        canvas.dispatchEvent(new Event('load'));
       });
     return;
   }
