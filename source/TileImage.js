@@ -319,7 +319,8 @@ export function defaultTileLoadFunction(imageTile, src) {
     fetch(src, {
       // TO DO: fix
       // @ts-ignore
-      mode: imageTile.crossOrigin_ ? 'cors' : 'same-origin',
+      // mode: imageTile.crossOrigin_ ? 'cors' : 'same-origin',
+      mode: 'no-cors',
     })
       .then((response) => {
         if (!response.ok) {
