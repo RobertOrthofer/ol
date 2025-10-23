@@ -113,6 +113,15 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
   }
 
   /**
+   * Determine whether tiles for next extent should be enqueued for rendering.
+   * @return {boolean} Rendering tiles for next extent is supported.
+   * @override
+   */
+  enqueueTilesForNextExtent() {
+    return this.getLayer().getRenderMode() !== 'vector';
+  }
+
+  /**
    * @param {import("../../VectorRenderTile.js").default} tile Tile.
    * @param {import("../../Map.js").FrameState} frameState Frame state.
    * @param {number} x Left of the tile.
@@ -154,12 +163,19 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
     const viewState = frameState.viewState;
     const resolution = viewState.resolution;
     const viewHints = frameState.viewHints;
+    const source = this.getLayer().getSource();
+    const tileGrid = source.getTileGridForProjection(viewState.projection);
     const hifi = !(
       viewHints[ViewHint.ANIMATING] || viewHints[ViewHint.INTERACTING]
     );
-    if (hifi || !tile.wantedResolution) {
+    const withinTileResolutionRange =
+      tileGrid.getZForResolution(resolution, source.zDirection) === z;
+    if (hifi && withinTileResolutionRange) {
       tile.wantedResolution = resolution;
+    } else if (!tile.wantedResolution) {
+      tile.wantedResolution = tileGrid.getResolution(z);
     }
+
     return tile;
   }
 
@@ -716,7 +732,7 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
 
   /**
    * Render the vectors for this layer.
-   * @param {CanvasRenderingContext2D} context Target context.
+   * @param {CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D} context Target context.
    * @param {import("../../Map.js").FrameState} frameState Frame state.
    * @override
    */
@@ -910,10 +926,10 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
     const replayState = tile.getReplayState(layer);
     const revision = layer.getRevision();
     const resolution = tile.wantedResolution;
-    return (
+    const tileImageNeedsRender =
       replayState.renderedTileResolution !== resolution ||
-      replayState.renderedTileRevision !== revision
-    );
+      replayState.renderedTileRevision !== revision;
+    return tileImageNeedsRender;
   }
 
   /**

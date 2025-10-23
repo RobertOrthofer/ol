@@ -14,7 +14,7 @@ export class CustomTile extends ImageTile {
     constructor(tileSize: import("../size.js").Size, tileCoord: import("../tilecoord.js").TileCoord, state: any, src: string, crossOrigin: string | null, tileLoadFunction: import("../Tile.js").LoadFunction, options?: import("../Tile.js").Options);
     /**
      * @private
-     * @type {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement}
+     * @type {HTMLCanvasElement|OffscreenCanvas|HTMLImageElement|HTMLVideoElement}
      */
     private zoomifyImage_;
     /**
@@ -22,12 +22,6 @@ export class CustomTile extends ImageTile {
      * @type {import("../size.js").Size}
      */
     private tileSize_;
-    /**
-     * Get the image element for this tile.
-     * @return {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} Image.
-     * @override
-     */
-    override getImage(): HTMLCanvasElement | HTMLImageElement | HTMLVideoElement;
 }
 export default Zoomify;
 export type TierSizeCalculation = "default" | "truncated";

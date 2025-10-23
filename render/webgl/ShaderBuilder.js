@@ -5,6 +5,7 @@
 import {colorToGlsl, numberToGlsl, stringToGlsl} from '../../expr/gpu.js';
 import {createDefaultStyle} from '../../style/flat.js';
 import {LINESTRING_ANGLE_COSINE_CUTOFF} from './bufferUtil.js';
+import {UNPACK_COLOR_FN} from './compileUtil.js';
 
 export const COMMON_HEADER = `#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
@@ -28,6 +29,8 @@ uniform mediump int u_hitDetection;
 const float PI = 3.141592653589793238;
 const float TWO_PI = 2.0 * PI;
 float currentLineMetric = 0.; // an actual value will be used in the stroke shaders
+
+${UNPACK_COLOR_FN}
 `;
 
 const DEFAULT_STYLE = createDefaultStyle();
@@ -177,6 +180,12 @@ export class ShaderBuilder {
      * @private
      */
     this.strokeDistanceFieldExpression_ = '-1000.';
+
+    /**
+     * @private
+     * @type {string}
+     */
+    this.strokePatternLengthExpression_ = null;
 
     /**
      * @type {boolean}
@@ -432,6 +441,27 @@ export class ShaderBuilder {
   }
 
   /**
+   * Defining a pattern length for a stroke lets us avoid having visual artifacts when
+   * a linestring is very long and thus has very high "distance" attributes on its vertices.
+   * If we apply a pattern or dash array to a stroke we know for certain that the full distance value
+   * is not necessary and can be trimmed down using `mod(currentDistance, patternLength)`.
+   * @param {string} expression Stroke expression that evaluates to a`float; value is expected to be
+   * in pixels.
+   * @return {ShaderBuilder} the builder object
+   */
+  setStrokePatternLengthExpression(expression) {
+    this.strokePatternLengthExpression_ = expression;
+    return this;
+  }
+
+  /**
+   * @return {string} The current stroke pattern length expression.
+   */
+  getStrokePatternLengthExpression() {
+    return this.strokePatternLengthExpression_;
+  }
+
+  /**
    * @param {string} expression Fill color expression, evaluate to `vec4`
    * @return {ShaderBuilder} the builder object
    */
@@ -476,7 +506,7 @@ export class ShaderBuilder {
 ${this.uniforms_.map((uniform) => `uniform ${uniform.type} ${uniform.name};`).join('\n')}
 attribute vec2 a_position;
 attribute vec2 a_localPosition;
-attribute vec4 a_hitColor;
+attribute vec2 a_hitColor;
 
 varying vec2 v_texCoord;
 varying vec2 v_quadCoord;
@@ -516,7 +546,7 @@ void main(void) {
   float u = mix(texCoord.s, texCoord.p, a_localPosition.x * 0.5 + 0.5);
   float v = mix(texCoord.t, texCoord.q, a_localPosition.y * 0.5 + 0.5);
   v_texCoord = vec2(u, v);
-  v_hitColor = a_hitColor;
+  v_hitColor = unpackColor(a_hitColor);
   v_angle = angle;
   c = cos(-v_angle);
   s = sin(-v_angle);
@@ -592,17 +622,18 @@ attribute vec2 a_localPosition;
 attribute float a_measureStart;
 attribute float a_measureEnd;
 attribute float a_angleTangentSum;
-attribute float a_distance;
+attribute float a_distanceLow;
+attribute float a_distanceHigh;
 attribute vec2 a_joinAngles;
-attribute vec4 a_hitColor;
+attribute vec2 a_hitColor;
 
-varying vec2 v_segmentStart;
-varying vec2 v_segmentEnd;
+varying vec2 v_segmentStartPx;
+varying vec2 v_segmentEndPx;
 varying float v_angleStart;
 varying float v_angleEnd;
 varying float v_width;
 varying vec4 v_hitColor;
-varying float v_distanceOffsetPx;
+varying float v_distancePx;
 varying float v_measureStart;
 varying float v_measureEnd;
 
@@ -678,11 +709,21 @@ void main(void) {
   positionPx = positionPx + joinDirection * (lineWidth * 0.5 + 1.); // adding 1 pixel for antialiasing
   gl_Position = pxToScreen(positionPx);
 
-  v_segmentStart = segmentStartPx;
-  v_segmentEnd = segmentEndPx;
+  v_segmentStartPx = segmentStartPx;
+  v_segmentEndPx = segmentEndPx;
   v_width = lineWidth;
-  v_hitColor = a_hitColor;
-  v_distanceOffsetPx = a_distance / u_resolution - (lineOffsetPx * a_angleTangentSum);
+  v_hitColor = unpackColor(a_hitColor);
+
+  v_distancePx = a_distanceLow / u_resolution - (lineOffsetPx * a_angleTangentSum);
+  float distanceHighPx = a_distanceHigh / u_resolution;
+  ${
+    this.strokePatternLengthExpression_ !== null
+      ? `v_distancePx = mod(v_distancePx, ${this.strokePatternLengthExpression_});
+  distanceHighPx = mod(distanceHighPx, ${this.strokePatternLengthExpression_});
+  `
+      : ''
+  }v_distancePx += distanceHighPx;
+
   v_measureStart = a_measureStart;
   v_measureEnd = a_measureEnd;
 ${this.attributes_
@@ -706,13 +747,13 @@ ${this.attributes_
 
     return `${COMMON_HEADER}
 ${this.uniforms_.map((uniform) => `uniform ${uniform.type} ${uniform.name};`).join('\n')}
-varying vec2 v_segmentStart;
-varying vec2 v_segmentEnd;
+varying vec2 v_segmentStartPx;
+varying vec2 v_segmentEndPx;
 varying float v_angleStart;
 varying float v_angleEnd;
 varying float v_width;
 varying vec4 v_hitColor;
-varying float v_distanceOffsetPx;
+varying float v_distancePx;
 varying float v_measureStart;
 varying float v_measureEnd;
 ${this.attributes_
@@ -821,9 +862,9 @@ ${this.attributes_
   )
   .join('\n')}
 
-  vec2 currentPoint = gl_FragCoord.xy / u_pixelRatio;
+  vec2 currentPointPx = gl_FragCoord.xy / u_pixelRatio;
   #ifdef GL_FRAGMENT_PRECISION_HIGH
-  vec2 worldPos = pxToWorld(currentPoint);
+  vec2 worldPos = pxToWorld(currentPointPx);
   if (
     abs(u_renderExtent[0] - u_renderExtent[2]) > 0.0 && (
       worldPos[0] < u_renderExtent[0] ||
@@ -836,28 +877,25 @@ ${this.attributes_
   }
   #endif
 
-  float segmentLength = length(v_segmentEnd - v_segmentStart);
-  vec2 segmentTangent = (v_segmentEnd - v_segmentStart) / segmentLength;
+  float segmentLengthPx = length(v_segmentEndPx - v_segmentStartPx);
+  segmentLengthPx = max(segmentLengthPx, 1.17549429e-38); // avoid divide by zero
+  vec2 segmentTangent = (v_segmentEndPx - v_segmentStartPx) / segmentLengthPx;
   vec2 segmentNormal = vec2(-segmentTangent.y, segmentTangent.x);
-  vec2 startToPoint = currentPoint - v_segmentStart;
-  float lengthToPoint = max(0., min(dot(segmentTangent, startToPoint), segmentLength));
-  float currentLengthPx = lengthToPoint + v_distanceOffsetPx;
-  float currentRadiusPx = distanceFromSegment(currentPoint, v_segmentStart, v_segmentEnd);
-  float currentRadiusRatio = dot(segmentNormal, startToPoint) * 2. / v_width;
-  currentLineMetric = mix(
-    v_measureStart,
-    v_measureEnd,
-    lengthToPoint / max(segmentLength, 1.17549429e-38)
-  );
+  vec2 startToPointPx = currentPointPx - v_segmentStartPx;
+  float lengthToPointPx = max(0., min(dot(segmentTangent, startToPointPx), segmentLengthPx));
+  float currentLengthPx = lengthToPointPx + v_distancePx;
+  float currentRadiusPx = distanceFromSegment(currentPointPx, v_segmentStartPx, v_segmentEndPx);
+  float currentRadiusRatio = dot(segmentNormal, startToPointPx) * 2. / v_width;
+  currentLineMetric = mix(v_measureStart, v_measureEnd, lengthToPointPx / segmentLengthPx);
 
   if (${this.discardExpression_}) { discard; }
 
   float capType = ${this.strokeCapExpression_};
   float joinType = ${this.strokeJoinExpression_};
-  float segmentStartDistance = computeSegmentPointDistance(currentPoint, v_segmentStart, v_segmentEnd, v_width, v_angleStart, capType, joinType);
-  float segmentEndDistance = computeSegmentPointDistance(currentPoint, v_segmentEnd, v_segmentStart, v_width, v_angleEnd, capType, joinType);
+  float segmentStartDistance = computeSegmentPointDistance(currentPointPx, v_segmentStartPx, v_segmentEndPx, v_width, v_angleStart, capType, joinType);
+  float segmentEndDistance = computeSegmentPointDistance(currentPointPx, v_segmentEndPx, v_segmentStartPx, v_width, v_angleEnd, capType, joinType);
   float distanceField = max(
-    segmentDistanceField(currentPoint, v_segmentStart, v_segmentEnd, v_width),
+    segmentDistanceField(currentPointPx, v_segmentStartPx, v_segmentEndPx, v_width),
     max(segmentStartDistance, segmentEndDistance)
   );
   distanceField = max(distanceField, ${this.strokeDistanceFieldExpression_});
@@ -887,7 +925,7 @@ ${this.attributes_
     return `${COMMON_HEADER}
 ${this.uniforms_.map((uniform) => `uniform ${uniform.type} ${uniform.name};`).join('\n')}
 attribute vec2 a_position;
-attribute vec4 a_hitColor;
+attribute vec2 a_hitColor;
 
 varying vec4 v_hitColor;
 
@@ -900,7 +938,7 @@ varying ${attribute.varyingType} ${attribute.varyingName};`,
 ${this.vertexShaderFunctions_.join('\n')}
 void main(void) {
   gl_Position = u_projectionMatrix * vec4(a_position, u_depth, 1.0);
-  v_hitColor = a_hitColor;
+  v_hitColor = unpackColor(a_hitColor);
 ${this.attributes_
   .map(
     (attribute) =>

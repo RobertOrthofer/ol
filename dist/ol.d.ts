@@ -721,10 +721,11 @@ declare namespace ol {
                 export { _ol_render_webgl_compileUtil$getGlslSizeFromType as getGlslSizeFromType };
                 export { _ol_render_webgl_compileUtil$getGlslTypeFromType as getGlslTypeFromType };
                 export { _ol_render_webgl_compileUtil$packColor as packColor };
+                export { _ol_render_webgl_compileUtil$unpackColor as unpackColor };
             }
             export namespace encodeUtil {
                 export { _ol_render_webgl_encodeUtil$colorDecodeId as colorDecodeId };
-                export { _ol_render_webgl_encodeUtil$colorEncodeId as colorEncodeId };
+                export { _ol_render_webgl_encodeUtil$colorEncodeIdAndPack as colorEncodeIdAndPack };
             }
             export namespace renderinstructions {
                 export { _ol_render_webgl_renderinstructions$generateLineStringRenderInstructions as generateLineStringRenderInstructions };
@@ -742,7 +743,7 @@ declare namespace ol {
         export { $ol$renderer$Composite as Composite };
         export { $ol$renderer$Layer as Layer };
         export { $ol$renderer$Map as Map };
-        export { $ol$renderer$Worker as Worker };
+        export { $ol$renderer$WorkerMap as WorkerMap };
         export namespace canvas {
             export { $ol$renderer$canvas$ImageLayer as ImageLayer };
             export { $ol$renderer$canvas$Layer as Layer };
@@ -1613,8 +1614,9 @@ import { generateUniformsFromContext as _ol_render_webgl_compileUtil$generateUni
 import { getGlslSizeFromType as _ol_render_webgl_compileUtil$getGlslSizeFromType } from '../../ol/render/webgl/compileUtil.js';
 import { getGlslTypeFromType as _ol_render_webgl_compileUtil$getGlslTypeFromType } from '../../ol/render/webgl/compileUtil.js';
 import { packColor as _ol_render_webgl_compileUtil$packColor } from '../../ol/render/webgl/compileUtil.js';
+import { unpackColor as _ol_render_webgl_compileUtil$unpackColor } from '../../ol/render/webgl/compileUtil.js';
 import { colorDecodeId as _ol_render_webgl_encodeUtil$colorDecodeId } from '../../ol/render/webgl/encodeUtil.js';
-import { colorEncodeId as _ol_render_webgl_encodeUtil$colorEncodeId } from '../../ol/render/webgl/encodeUtil.js';
+import { colorEncodeIdAndPack as _ol_render_webgl_encodeUtil$colorEncodeIdAndPack } from '../../ol/render/webgl/encodeUtil.js';
 import { generateLineStringRenderInstructions as _ol_render_webgl_renderinstructions$generateLineStringRenderInstructions } from '../../ol/render/webgl/renderinstructions.js';
 import { generatePointRenderInstructions as _ol_render_webgl_renderinstructions$generatePointRenderInstructions } from '../../ol/render/webgl/renderinstructions.js';
 import { generatePolygonRenderInstructions as _ol_render_webgl_renderinstructions$generatePolygonRenderInstructions } from '../../ol/render/webgl/renderinstructions.js';
@@ -1624,7 +1626,7 @@ import { parseLiteralStyle as _ol_render_webgl_style$parseLiteralStyle } from '.
 import $ol$renderer$Composite from '../../ol/renderer/Composite.js';
 import $ol$renderer$Layer from '../../ol/renderer/Layer.js';
 import $ol$renderer$Map from '../../ol/renderer/Map.js';
-import $ol$renderer$Worker from '../../ol/renderer/Worker.js';
+import $ol$renderer$WorkerMap from '../../ol/renderer/WorkerMap.js';
 import $ol$renderer$canvas$ImageLayer from '../../ol/renderer/canvas/ImageLayer.js';
 import $ol$renderer$canvas$Layer from '../../ol/renderer/canvas/Layer.js';
 import $ol$renderer$canvas$TileLayer from '../../ol/renderer/canvas/TileLayer.js';

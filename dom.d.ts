@@ -5,11 +5,11 @@
  * Create an html canvas element and returns its 2d context.
  * @param {number} [width] Canvas width.
  * @param {number} [height] Canvas height.
- * @param {Array<HTMLCanvasElement>} [canvasPool] Canvas pool to take existing canvas from.
+ * @param {Array<HTMLCanvasElement|OffscreenCanvas>} [canvasPool] Canvas pool to take existing canvas from.
  * @param {CanvasRenderingContext2DSettings} [settings] CanvasRenderingContext2DSettings
- * @return {CanvasRenderingContext2D} The context.
+ * @return {CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D} The context.
  */
-export function createCanvasContext2D(width?: number, height?: number, canvasPool?: Array<HTMLCanvasElement>, settings?: CanvasRenderingContext2DSettings): CanvasRenderingContext2D;
+export function createCanvasContext2D(width?: number, height?: number, canvasPool?: Array<HTMLCanvasElement | OffscreenCanvas>, settings?: CanvasRenderingContext2DSettings): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 /**
  * @return {CanvasRenderingContext2D} Shared canvas context.
  */
@@ -17,9 +17,9 @@ export function getSharedCanvasContext2D(): CanvasRenderingContext2D;
 /**
  * Releases canvas memory to avoid exceeding memory limits in Safari.
  * See https://pqina.nl/blog/total-canvas-memory-use-exceeds-the-maximum-limit/
- * @param {CanvasRenderingContext2D} context Context.
+ * @param {CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D} context Context.
  */
-export function releaseCanvas(context: CanvasRenderingContext2D): void;
+export function releaseCanvas(context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D): void;
 /**
  * Get the current computed width for the given element including margin,
  * padding and border.

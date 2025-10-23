@@ -313,10 +313,14 @@ class TileImage extends UrlTile {
  * @param {ImageTile} imageTile Image tile.
  * @param {string} src Source.
  */
-function defaultTileLoadFunction(imageTile, src) {
+export function defaultTileLoadFunction(imageTile, src) {
   if (WORKER_OFFSCREEN_CANVAS) {
     // special treatment for offscreen canvas
-    fetch(src)
+    fetch(src, {
+      // TO DO: fix
+      // @ts-ignore
+      mode: imageTile.crossOrigin_ ? 'cors' : 'same-origin',
+    })
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -327,18 +331,20 @@ function defaultTileLoadFunction(imageTile, src) {
         return createImageBitmap(blob);
       })
       .then((imageBitmap) => {
-        // to do: use imageBitmap without canvas?
         const canvas = imageTile.getImage();
         canvas.width = imageBitmap.width;
         canvas.height = imageBitmap.height;
-        const ctx = canvas.getContext('2d');
+        const ctx = /** @type {OffscreenCanvas} */ (canvas).getContext('2d');
         ctx.drawImage(imageBitmap, 0, 0);
         imageBitmap.close?.();
+        // mock the image 'load' event
         canvas.dispatchEvent(new Event('load'));
       })
-      .catch((err) => {
-        console.error('Error loading image:', err); // eslint-disable-line no-console
+      .catch(() => {
+        const canvas = imageTile.getImage();
+        canvas.dispatchEvent(new Event('error'));
       });
+    return;
   }
 
   /** @type {HTMLImageElement|HTMLVideoElement} */ (imageTile.getImage()).src =

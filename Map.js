@@ -40,7 +40,7 @@ import PointerEventType from './pointer/EventType.js';
 import {fromUserCoordinate, toUserCoordinate} from './proj.js';
 import RenderEventType from './render/EventType.js';
 import CompositeMapRenderer from './renderer/Composite.js';
-import WorkerMapRenderer from './renderer/Worker.js';
+import WorkerMapRenderer from './renderer/WorkerMap.js';
 import {hasArea} from './size.js';
 import {
   apply as applyTransform,
@@ -372,7 +372,6 @@ class Map extends BaseObject {
      * @type {!HTMLElement}
      */
     if (!WORKER_OFFSCREEN_CANVAS) {
-      // to do: mock div?
       this.viewport_ = document.createElement('div');
       this.viewport_.className =
         'ol-viewport' + ('ontouchstart' in window ? ' ol-touch' : '');

@@ -376,6 +376,15 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
   }
 
   /**
+   * Determine whether tiles for next extent should be enqueued for rendering.
+   * @return {boolean} Rendering tiles for next extent is supported.
+   * @protected
+   */
+  enqueueTilesForNextExtent() {
+    return true;
+  }
+
+  /**
    * @param {import("../../Map.js").FrameState} frameState Frame state.
    * @param {import("../../extent.js").Extent} extent The extent to be rendered.
    * @param {number} initialZ The zoom level.
@@ -625,7 +634,7 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
      */
 
     const preload = tileLayer.getPreload();
-    if (frameState.nextExtent) {
+    if (frameState.nextExtent && this.enqueueTilesForNextExtent()) {
       const targetZ = tileGrid.getZForResolution(
         viewState.nextResolution,
         tileSource.zDirection,
@@ -945,7 +954,7 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
   }
 
   /**
-   * @return {HTMLCanvasElement} Image
+   * @return {HTMLCanvasElement|OffscreenCanvas} Image
    */
   getImage() {
     const context = this.context;
@@ -955,7 +964,7 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
   /**
    * Get the image from a tile.
    * @param {import("../../ImageTile.js").default} tile Tile.
-   * @return {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} Image.
+   * @return {HTMLCanvasElement|OffscreenCanvas|HTMLImageElement|HTMLVideoElement} Image.
    * @protected
    */
   getTileImage(tile) {

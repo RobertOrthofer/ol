@@ -39,16 +39,15 @@ class ImageTile extends Tile {
      * @private
      * @type {HTMLImageElement|HTMLCanvasElement|OffscreenCanvas}
      */
-    this.image_ = WORKER_OFFSCREEN_CANVAS
-      ? new OffscreenCanvas(1, 1)
-      : new Image();
+    this.image_;
 
-    if (
-      !WORKER_OFFSCREEN_CANVAS &&
-      this.image_ instanceof HTMLImageElement &&
-      crossOrigin !== null
-    ) {
-      this.image_.crossOrigin = crossOrigin;
+    if (WORKER_OFFSCREEN_CANVAS) {
+      this.image_ = new OffscreenCanvas(1, 1);
+    } else {
+      this.image_ = new Image();
+      if (crossOrigin !== null) {
+        this.image_.crossOrigin = crossOrigin;
+      }
     }
 
     /**
@@ -105,15 +104,13 @@ class ImageTile extends Tile {
     if (WORKER_OFFSCREEN_CANVAS) {
       // OffscreenCanvas does not have naturalWidth and naturalHeight
       this.state = TileState.LOADED;
-      this.unlistenImage_();
-      this.changed();
-      return;
-    }
-    const image = /** @type {HTMLImageElement} */ (this.image_);
-    if (image.naturalWidth && image.naturalHeight) {
-      this.state = TileState.LOADED;
     } else {
-      this.state = TileState.EMPTY;
+      const image = /** @type {HTMLImageElement} */ (this.image_);
+      if (image.naturalWidth && image.naturalHeight) {
+        this.state = TileState.LOADED;
+      } else {
+        this.state = TileState.EMPTY;
+      }
     }
     this.unlistenImage_();
     this.changed();
@@ -200,7 +197,7 @@ class ImageTile extends Tile {
 
 /**
  * Get a 1-pixel blank image.
- * @return {HTMLCanvasElement} Blank image.
+ * @return {HTMLCanvasElement|OffscreenCanvas} Blank image.
  */
 function getBlankImage() {
   const ctx = createCanvasContext2D(1, 1);

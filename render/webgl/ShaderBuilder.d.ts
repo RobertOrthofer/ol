@@ -1,4 +1,4 @@
-export const COMMON_HEADER: "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\nuniform mat4 u_projectionMatrix;\nuniform mat4 u_screenToWorldMatrix;\nuniform vec2 u_viewportSizePx;\nuniform float u_pixelRatio;\nuniform float u_globalAlpha;\nuniform float u_time;\nuniform float u_zoom;\nuniform float u_resolution;\nuniform float u_rotation;\nuniform vec4 u_renderExtent;\nuniform vec2 u_patternOrigin;\nuniform float u_depth;\nuniform mediump int u_hitDetection;\n\nconst float PI = 3.141592653589793238;\nconst float TWO_PI = 2.0 * PI;\nfloat currentLineMetric = 0.; // an actual value will be used in the stroke shaders\n";
+export const COMMON_HEADER: "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\nuniform mat4 u_projectionMatrix;\nuniform mat4 u_screenToWorldMatrix;\nuniform vec2 u_viewportSizePx;\nuniform float u_pixelRatio;\nuniform float u_globalAlpha;\nuniform float u_time;\nuniform float u_zoom;\nuniform float u_resolution;\nuniform float u_rotation;\nuniform vec4 u_renderExtent;\nuniform vec2 u_patternOrigin;\nuniform float u_depth;\nuniform mediump int u_hitDetection;\n\nconst float PI = 3.141592653589793238;\nconst float TWO_PI = 2.0 * PI;\nfloat currentLineMetric = 0.; // an actual value will be used in the stroke shaders\n\nvec4 unpackColor(vec2 packedColor) {\n  return vec4(\n    min(floor(packedColor[0] / 256.0) / 255.0, 1.0),\n    min(mod(packedColor[0], 256.0) / 255.0, 1.0),\n    min(floor(packedColor[1] / 256.0) / 255.0, 1.0),\n    min(mod(packedColor[1], 256.0) / 255.0, 1.0)\n  );\n}\n";
 /**
  * @typedef {Object} AttributeDescription
  * @property {string} name Attribute name, as will be declared in the header of the vertex shader (including a_)
@@ -118,6 +118,11 @@ export class ShaderBuilder {
      * @private
      */
     private strokeDistanceFieldExpression_;
+    /**
+     * @private
+     * @type {string}
+     */
+    private strokePatternLengthExpression_;
     /**
      * @type {boolean}
      * @private
@@ -272,6 +277,20 @@ export class ShaderBuilder {
      * @return {ShaderBuilder} the builder object
      */
     setStrokeDistanceFieldExpression(expression: string): ShaderBuilder;
+    /**
+     * Defining a pattern length for a stroke lets us avoid having visual artifacts when
+     * a linestring is very long and thus has very high "distance" attributes on its vertices.
+     * If we apply a pattern or dash array to a stroke we know for certain that the full distance value
+     * is not necessary and can be trimmed down using `mod(currentDistance, patternLength)`.
+     * @param {string} expression Stroke expression that evaluates to a`float; value is expected to be
+     * in pixels.
+     * @return {ShaderBuilder} the builder object
+     */
+    setStrokePatternLengthExpression(expression: string): ShaderBuilder;
+    /**
+     * @return {string} The current stroke pattern length expression.
+     */
+    getStrokePatternLengthExpression(): string;
     /**
      * @param {string} expression Fill color expression, evaluate to `vec4`
      * @return {ShaderBuilder} the builder object

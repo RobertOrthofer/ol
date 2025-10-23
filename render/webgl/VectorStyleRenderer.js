@@ -10,7 +10,7 @@ import {AttributeType} from '../../webgl/Helper.js';
 import {ARRAY_BUFFER, DYNAMIC_DRAW, ELEMENT_ARRAY_BUFFER} from '../../webgl.js';
 import {create as createWebGLWorker} from '../../worker/webgl.js';
 import {WebGLWorkerMessageType} from './constants.js';
-import {colorEncodeId} from './encodeUtil.js';
+import {colorEncodeIdAndPack} from './encodeUtil.js';
 import {
   generateLineStringRenderInstructions,
   generatePointRenderInstructions,
@@ -44,7 +44,8 @@ export const Attributes = {
   MEASURE_END: 'a_measureEnd',
   ANGLE_TANGENT_SUM: 'a_angleTangentSum',
   JOIN_ANGLES: 'a_joinAngles',
-  DISTANCE: 'a_distance',
+  DISTANCE_LOW: 'a_distanceLow',
+  DISTANCE_HIGH: 'a_distanceHigh',
 };
 
 /**
@@ -169,9 +170,9 @@ class VectorStyleRenderer {
     if (this.hitDetectionEnabled_) {
       this.customAttributes_['hitColor'] = {
         callback() {
-          return colorEncodeId(this.ref, tmpColor);
+          return colorEncodeIdAndPack(this.ref, tmpColor);
         },
-        size: 4,
+        size: 2,
       };
     }
 
@@ -269,7 +270,12 @@ class VectorStyleRenderer {
               type: AttributeType.FLOAT,
             },
             {
-              name: Attributes.DISTANCE,
+              name: Attributes.DISTANCE_LOW,
+              size: 1,
+              type: AttributeType.FLOAT,
+            },
+            {
+              name: Attributes.DISTANCE_HIGH,
               size: 1,
               type: AttributeType.FLOAT,
             },
