@@ -316,11 +316,23 @@ class TileImage extends UrlTile {
 export function defaultTileLoadFunction(imageTile, src) {
   if (WORKER_OFFSCREEN_CANVAS) {
     // special treatment for offscreen canvas
+    const crossOrigin = imageTile.getCrossOrigin();
+
+    /** @type {RequestMode} */
+    let mode = 'same-origin';
+    /** @type {RequestCredentials} */
+    let credentials = 'same-origin';
+    if (crossOrigin === 'anonymous' || crossOrigin === '') {
+      mode = 'cors';
+      credentials = 'omit';
+    } else if (crossOrigin === 'use-credentials') {
+      mode = 'cors';
+      credentials = 'include';
+    }
+
     fetch(src, {
-      // TO DO: fix
-      // @ts-ignore
-      // mode: imageTile.crossOrigin_ ? 'cors' : 'same-origin',
-      mode: 'no-cors',
+      mode,
+      credentials,
     })
       .then((response) => {
         if (!response.ok) {
@@ -343,9 +355,7 @@ export function defaultTileLoadFunction(imageTile, src) {
       })
       .catch(() => {
         const canvas = imageTile.getImage();
-        //canvas.dispatchEvent(new Event('error'));
-        // TEMPORARY
-        canvas.dispatchEvent(new Event('load'));
+        canvas.dispatchEvent(new Event('error'));
       });
     return;
   }

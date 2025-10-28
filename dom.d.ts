@@ -11,9 +11,9 @@
  */
 export function createCanvasContext2D(width?: number, height?: number, canvasPool?: Array<HTMLCanvasElement | OffscreenCanvas>, settings?: CanvasRenderingContext2DSettings): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 /**
- * @return {CanvasRenderingContext2D} Shared canvas context.
+ * @return {CanvasRenderingContext2D|OffscreenCanvasRenderingContext2D} Shared canvas context.
  */
-export function getSharedCanvasContext2D(): CanvasRenderingContext2D;
+export function getSharedCanvasContext2D(): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 /**
  * Releases canvas memory to avoid exceeding memory limits in Safari.
  * See https://pqina.nl/blog/total-canvas-memory-use-exceeds-the-maximum-limit/
@@ -54,4 +54,14 @@ export function removeChildren(node: Node): void;
  * @param {Array<Node>} children The desired children.
  */
 export function replaceChildren(node: Node, children: Array<Node>): void;
+/**
+ * Creates a minimal structure that mocks a DIV to be used in a worker environment
+ * @return {HTMLDivElement} mocked DIV
+ */
+export function createMockDiv(): HTMLDivElement;
+/***
+ * @param {*} obj The object to check.
+ * @return {obj is (HTMLCanvasElement | OffscreenCanvas)} The object is a canvas.
+ */
+export function isCanvas(obj: any): obj is (HTMLCanvasElement | OffscreenCanvas);
 //# sourceMappingURL=dom.d.ts.map

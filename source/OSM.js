@@ -88,6 +88,7 @@ class OSM extends XYZ {
          */
         (tile, src) => {
           const image = tile.getImage();
+          // FIXME referrer policy for worker fetch requests
           if (!WORKER_OFFSCREEN_CANVAS && image instanceof HTMLImageElement) {
             image.referrerPolicy = 'origin-when-cross-origin';
           }

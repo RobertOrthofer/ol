@@ -141,7 +141,7 @@ declare class ExecutorGroup {
     getDeferredZIndexContexts(): {
         [x: number]: import("./ZIndexContext.js").default[];
     };
-    getRenderedContext(): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+    getRenderedContext(): OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
     renderDeferred(): void;
 }
 //# sourceMappingURL=ExecutorGroup.d.ts.map

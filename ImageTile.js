@@ -84,6 +84,14 @@ class ImageTile extends Tile {
   }
 
   /**
+   * Get the cross origin of the ImageTile.
+   * @return {string} Cross origin.
+   */
+  getCrossOrigin() {
+    return this.crossOrigin_;
+  }
+
+  /**
    * Tracks loading or read errors.
    *
    * @private

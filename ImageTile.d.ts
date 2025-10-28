@@ -48,6 +48,11 @@ declare class ImageTile extends Tile {
      */
     setImage(element: HTMLCanvasElement | OffscreenCanvas | HTMLImageElement): void;
     /**
+     * Get the cross origin of the ImageTile.
+     * @return {string} Cross origin.
+     */
+    getCrossOrigin(): string;
+    /**
      * Tracks loading or read errors.
      *
      * @private
