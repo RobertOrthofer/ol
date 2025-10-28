@@ -176,6 +176,10 @@ export function createMockDiv() {
         return node;
       },
       /**
+       * dummy function, as this structure never has a parent
+       */
+      remove: () => {},
+      /**
        * @param {HTMLElement} node html node.
        * @return {HTMLElement} html node.
        */
