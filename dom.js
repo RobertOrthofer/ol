@@ -157,7 +157,8 @@ export function replaceChildren(node, children) {
 }
 
 /**
- * Creates a minimal structure that mocks a DIV to be used in a worker environment
+ * Creates a minimal structure that mocks a DIV to be used by the composite and
+ * layer renderer in a worker environment
  * @return {HTMLDivElement} mocked DIV
  */
 export function createMockDiv() {
@@ -176,9 +177,9 @@ export function createMockDiv() {
         return node;
       },
       /**
-       * dummy function, as this structure never has a parent
+       * dummy function, as this structure is not supposed to have a parent.
        */
-      remove: () => {},
+      remove: function () {},
       /**
        * @param {HTMLElement} node html node.
        * @return {HTMLElement} html node.
